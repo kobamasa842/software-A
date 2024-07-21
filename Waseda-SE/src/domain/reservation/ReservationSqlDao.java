@@ -132,32 +132,77 @@ public class ReservationSqlDao implements ReservationDao {
 		}
 	}
 
-    /**
-     * @see domain.reservation.ReservationDao#cancelReservation(java.lang.String)
-     */
-    public void cancelReservation(String reservationNumber) throws ReservationException {
-        StringBuffer sql = new StringBuffer();
-        Statement statement = null;
-        Connection connection = null;
-        try {
-            connection = getConnection();
-            statement = connection.createStatement();
-            sql.append("DELETE FROM ");
-            sql.append(TABLE_NAME);
-            sql.append(" WHERE RESERVATIONNUMBER= '");
-            sql.append(reservationNumber);
-            sql.append("';");
-            statement.executeUpdate(sql.toString());
-            System.out.println("Reservation " + reservationNumber + " has been cancelled in the database.");
-        } catch (SQLException e) {
-            ReservationException exception = new ReservationException(
-                    ReservationException.CODE_DB_EXEC_QUERY_ERROR, e);
-            exception.getDetailMessages().add("cancelReservation()");
-            throw exception;
-        } finally {
-            close(null, statement, connection);
-        }
-    }
+    // /**
+    //  * @see domain.reservation.ReservationDao#cancelReservation(java.lang.String)
+    //  */
+    // public void cancelReservation(String reservationNumber) throws ReservationException {
+    //     StringBuffer sql = new StringBuffer();
+    //     Statement statement = null;
+    //     Connection connection = null;
+    //     try {
+    //         connection = getConnection();
+    //         statement = connection.createStatement();
+    //         sql.append("DELETE FROM ");
+    //         sql.append(TABLE_NAME);
+    //         sql.append(" WHERE RESERVATIONNUMBER= '");
+    //         sql.append(reservationNumber);
+    //         sql.append("';");
+    //         statement.executeUpdate(sql.toString());
+    //         System.out.println("Reservation " + reservationNumber + " has been cancelled in the database.");
+    //     } catch (SQLException e) {
+    //         ReservationException exception = new ReservationException(
+    //                 ReservationException.CODE_DB_EXEC_QUERY_ERROR, e);
+    //         exception.getDetailMessages().add("cancelReservation()");
+    //         throw exception;
+    //     } finally {
+    //         close(null, statement, connection);
+    //     }
+    // }
+
+	public void cancelReservation(String reservationNumber) throws ReservationException {
+		StringBuffer sql = new StringBuffer();
+		Statement statement = null;
+		ResultSet resultSet = null;
+		Connection connection = null;
+		try {
+			connection = getConnection();
+			statement = connection.createStatement();
+			
+			// まず、予約のステータスを確認する
+			sql.append("SELECT status FROM ");
+			sql.append(TABLE_NAME);
+			sql.append(" WHERE RESERVATIONNUMBER= '");
+			sql.append(reservationNumber);
+			sql.append("';");
+			resultSet = statement.executeQuery(sql.toString());
+			
+			if (resultSet.next()) {
+				String status = resultSet.getString("status");
+				if ("consume".equals(status)) {
+					throw new ReservationException(ReservationException.CODE_RESERVATION_ALREADY_CONSUMED);
+				}
+			} else {
+				throw new ReservationException(ReservationException.CODE_RESERVATION_NOT_FOUND);
+			}
+			
+			// ステータスが "create" の場合のみ予約をキャンセルする
+			sql.setLength(0); // SQLバッファをクリア
+			sql.append("DELETE FROM ");
+			sql.append(TABLE_NAME);
+			sql.append(" WHERE RESERVATIONNUMBER= '");
+			sql.append(reservationNumber);
+			sql.append("';");
+			statement.executeUpdate(sql.toString());
+			System.out.println("Reservation " + reservationNumber + " has been cancelled in the database.");
+		} catch (SQLException e) {
+			ReservationException exception = new ReservationException(
+					ReservationException.CODE_DB_EXEC_QUERY_ERROR, e);
+			exception.getDetailMessages().add("cancelReservation()");
+			throw exception;
+		} finally {
+			close(resultSet, statement, connection);
+		}
+	}
 
 	public List<Reservation> getAllReservations() throws ReservationException {
 		List<Reservation> reservations = new ArrayList<>();

@@ -43,7 +43,7 @@ public class CUI {
 				System.out.println("2: Check-in");
 				System.out.println("3: Check-out");
 				System.out.println("4: Cancel Reservation");
-				//System.out.println("5: Show Reservation Details");
+				System.out.println("5: Show Reservation Details");
 				System.out.println("9: End");
 				System.out.print("> ");
 
@@ -72,9 +72,9 @@ public class CUI {
 					case 4:
                         cancelReservation();
                         break;
-					//case 5:
-					//	showAllReservations();
-                    //    break;
+					case 5:
+						showAllReservations();
+                        break;
 					default:
                         System.out.println("Invalid choice. Please try again.");
 				}
