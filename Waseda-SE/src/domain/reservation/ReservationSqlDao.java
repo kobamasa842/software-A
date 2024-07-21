@@ -8,6 +8,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import util.DateUtil;
 
@@ -130,6 +132,66 @@ public class ReservationSqlDao implements ReservationDao {
 		}
 	}
 
+    /**
+     * @see domain.reservation.ReservationDao#cancelReservation(java.lang.String)
+     */
+    public void cancelReservation(String reservationNumber) throws ReservationException {
+        StringBuffer sql = new StringBuffer();
+        Statement statement = null;
+        Connection connection = null;
+        try {
+            connection = getConnection();
+            statement = connection.createStatement();
+            sql.append("DELETE FROM ");
+            sql.append(TABLE_NAME);
+            sql.append(" WHERE RESERVATIONNUMBER= '");
+            sql.append(reservationNumber);
+            sql.append("';");
+            statement.executeUpdate(sql.toString());
+            System.out.println("Reservation " + reservationNumber + " has been cancelled in the database.");
+        } catch (SQLException e) {
+            ReservationException exception = new ReservationException(
+                    ReservationException.CODE_DB_EXEC_QUERY_ERROR, e);
+            exception.getDetailMessages().add("cancelReservation()");
+            throw exception;
+        } finally {
+            close(null, statement, connection);
+        }
+    }
+
+	public List<Reservation> getAllReservations() throws ReservationException {
+		List<Reservation> reservations = new ArrayList<>();
+		StringBuffer sql = new StringBuffer();
+		Statement statement = null;
+		ResultSet resultSet = null;
+		Connection connection = null;
+		try {
+			connection = getConnection();
+			statement = connection.createStatement();
+			sql.append("SELECT reservationnumber, stayingdate, status FROM ");
+			sql.append(TABLE_NAME);
+			resultSet = statement.executeQuery(sql.toString());
+			while (resultSet.next()) {
+				Reservation reservation = new Reservation();
+				reservation.setReservationNumber(resultSet.getString("reservationnumber"));
+				reservation.setStatus(resultSet.getString("status"));
+				reservation.setStayingDate(DateUtil.convertToDate(resultSet.getString("stayingdate")));
+				reservations.add(reservation);
+			}
+		} catch (SQLException e) {
+			ReservationException exception = new ReservationException(
+					ReservationException.CODE_DB_EXEC_QUERY_ERROR, e);
+			exception.getDetailMessages().add("getAllReservations()");
+			throw exception;
+		} finally {
+			close(resultSet, statement, connection);
+		}
+		return reservations;
+	}
+
+
+
+
 	private Connection getConnection() throws ReservationException {
 		Connection connection = null;
 		try {
@@ -159,4 +221,5 @@ public class ReservationSqlDao implements ReservationDao {
 			throw new ReservationException(ReservationException.CODE_DB_CLOSE_ERROR, e);
 		}
 	}
+
 }
