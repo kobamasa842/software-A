@@ -7,12 +7,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Date;
+import java.util.List;
 
 import util.DateUtil;
 import app.AppException;
 import app.checkin.CheckInRoomForm;
 import app.checkout.CheckOutRoomForm;
+import app.reservation.CancelReservationForm;
 import app.reservation.ReserveRoomForm;
+import domain.reservation.Reservation;
+import domain.reservation.ReservationException;
+import domain.reservation.ReservationManager;
 
 /**
  * CUI class for Hotel Reservation Systems
@@ -37,6 +42,8 @@ public class CUI {
 				System.out.println("1: Reservation");
 				System.out.println("2: Check-in");
 				System.out.println("3: Check-out");
+				System.out.println("4: Cancel Reservation");
+				System.out.println("5: Show Reservation Details");
 				System.out.println("9: End");
 				System.out.print("> ");
 
@@ -45,7 +52,7 @@ public class CUI {
 					selectMenu = Integer.parseInt(menu);
 				}
 				catch (NumberFormatException e) {
-					selectMenu = 4;
+					selectMenu = 0;
 				}
 
 				if (selectMenu == 9) {
@@ -62,6 +69,14 @@ public class CUI {
 					case 3:
 						checkOutRoom();
 						break;
+					case 4:
+                        cancelReservation();
+                        break;
+					case 5:
+						showAllReservations();
+                        break;
+					default:
+                        System.out.println("Invalid choice. Please try again.");
 				}
 			}
 			System.out.println("Ended");
@@ -133,6 +148,44 @@ public class CUI {
 		checkoutRoomForm.checkOut();
 		System.out.println("Check-out has been completed.");
 	}
+
+    private void cancelReservation() throws IOException, AppException {
+        System.out.println("Input reservation number");
+        System.out.print("> ");
+
+        String reservationNumber = reader.readLine();
+
+        if (reservationNumber == null || reservationNumber.length() == 0) {
+            System.out.println("Invalid reservation number");
+            return;
+        }
+
+        CancelReservationForm cancelReservationForm = new CancelReservationForm();
+        cancelReservationForm.setReservationNumber(reservationNumber);
+        cancelReservationForm.cancelReservation();
+        System.out.println("Reservation has been cancelled.");
+    }
+    
+	
+    private void showAllReservations() throws IOException, AppException {
+        ReservationManager reservationManager = new ReservationManager();
+        try {
+            List<Reservation> reservations = reservationManager.getAllReservations();
+            if (reservations.isEmpty()) {
+                System.out.println("No reservations found.");
+            } else {
+                for (Reservation reservation : reservations) {
+                    System.out.println("Reservation Number: " + reservation.getReservationNumber());
+                    System.out.println("Staying Date: " + DateUtil.convertToString(reservation.getStayingDate()));
+                    System.out.println("Status: " + reservation.getStatus());
+                    System.out.println("-----------------------------");
+                }
+            }
+        } catch (ReservationException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
 
 	public static void main(String[] args) throws Exception {
 		CUI cui = new CUI();

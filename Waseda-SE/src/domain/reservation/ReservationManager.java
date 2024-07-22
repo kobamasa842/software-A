@@ -5,6 +5,7 @@ package domain.reservation;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import domain.DaoFactory;
 
@@ -68,6 +69,40 @@ public class ReservationManager {
 		reservation.setStatus(Reservation.RESERVATION_STATUS_CONSUME);
 		reservationDao.updateReservation(reservation);
 		return stayingDate;
+	}
+
+
+	public void cancelReservation(String reservationNumber) throws ReservationException,
+        	NullPointerException {
+    	if (reservationNumber == null) {
+        	throw new NullPointerException("reservationNumber");
+   		}
+
+		ReservationDao reservationDao = getReservationDao();
+		Reservation reservation = reservationDao.getReservation(reservationNumber);
+		if (reservation == null) {
+			throw new ReservationException(ReservationException.CODE_RESERVATION_NOT_FOUND);
+		}
+    	reservationDao.cancelReservation(reservationNumber);
+    }
+
+	public Reservation getReservation(String reservationNumber) throws ReservationException,
+			NullPointerException {
+		if (reservationNumber == null) {
+			throw new NullPointerException("reservationNumber");
+		}
+
+		ReservationDao reservationDao = getReservationDao();
+		Reservation reservation = reservationDao.getReservation(reservationNumber);
+		if (reservation == null) {
+			throw new ReservationException(ReservationException.CODE_RESERVATION_NOT_FOUND);
+		}
+		return reservation;
+	}
+
+	public List<Reservation> getAllReservations() throws ReservationException {
+		ReservationDao reservationDao = getReservationDao();
+		return reservationDao.getAllReservations();
 	}
 
 	private ReservationDao getReservationDao() {
